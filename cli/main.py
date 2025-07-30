@@ -1,54 +1,36 @@
-import argparse
-import pandas as pd
+from utils.logger import get_logger
+from utils.reader import read_csv_file
+from utils.analysis import analyze_dataframe, show_columns, show_sample, show_analysis
 from rich.console import Console
-from rich.table import Table
-from pathlib import Path
+from cli_args import parse_args
 
+logger = get_logger()
 console = Console()
-
-def load_csv(path):
-    if not Path(path).exists():
-        console.print(f"[red]Файл не найден: {path}[/red]")
-        return None
-    try:
-        df = pd.read_csv(path)
-        return df
-    except Exception as e:
-        console.print(f"[red]Ошибка загрузки CSV: {e}[/red]")
-        return None
-
-def validate_dataframe(df):
-    if df.empty:
-        console.print("[red]The dataset is empty.[/red]")
-        return False
-    if df.isnull().all().all():
-        console.print("[red]All values are missing![/red]")
-        return False
-    if df.columns.isnull().any():
-        console.print("[red]Some columns have no names![/red]")
-        return False
-    return True
-
-def show_columns(df):
-    table = Table(title="Колонки CSV-файла")
-    table.add_column("№")
-    table.add_column("Имя колонки")
-    for i, col in enumerate(df.columns):
-        table.add_row(str(i), col)
-    console.print(table)
-
-def show_sample(df, n=5):
-    console.print(df.head(n).to_string(index=False))
+args = parse_args()
 
 def main():
-    parser = argparse.ArgumentParser(description="CLI для анализа данных")
-    parser.add_argument("--file", type=str, required=True, help="Путь к CSV-файлу")
-    args = parser.parse_args()
+    logger.info("Starting analysis script")
+    df = read_csv_file(args.file)
 
-    df = load_csv(args.file)
-    if df is not None and validate_dataframe(df):
+    if df is None:
+        logger.error("DataFrame is None — exiting.")
+        return
+
+    if args.show_columns:
+        logger.info("Showing columns")
         show_columns(df)
+
+    if args.show_sample:
+        logger.info("Showing sample")
         show_sample(df)
 
+    if args.analyze:
+        logger.info("Analyzing dataset")
+        result = analyze_dataframe(df)
+        show_analysis(result)
+
+    logger.info("Finished")
+
+#python -m cli.main --file data/japan_life_expectancy.csv --*show-columns --show-sample --analyze
 if __name__ == "__main__":
     main()
