@@ -17,6 +17,18 @@ def load_csv(path):
         console.print(f"[red]Ошибка загрузки CSV: {e}[/red]")
         return None
 
+def validate_dataframe(df):
+    if df.empty:
+        console.print("[red]The dataset is empty.[/red]")
+        return False
+    if df.isnull().all().all():
+        console.print("[red]All values are missing![/red]")
+        return False
+    if df.columns.isnull().any():
+        console.print("[red]Some columns have no names![/red]")
+        return False
+    return True
+
 def show_columns(df):
     table = Table(title="Колонки CSV-файла")
     table.add_column("№")
@@ -34,7 +46,7 @@ def main():
     args = parser.parse_args()
 
     df = load_csv(args.file)
-    if df is not None:
+    if df is not None and validate_dataframe(df):
         show_columns(df)
         show_sample(df)
 
